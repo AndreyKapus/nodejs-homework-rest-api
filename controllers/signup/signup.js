@@ -2,6 +2,8 @@ const { User } = require("../../models/users");
 const Conflict = require("http-errors");
 const bcrypt = require("bcryptjs");
 const gravatar = require("gravatar");
+const sgMail = require("../../helpers/sendGrid");
+const { v4: uuidv4 } = require("uuid");
 
 const register = async (req, res, next) => {
   const { password, email, subscription = "starter" } = req.body;
@@ -13,7 +15,16 @@ const register = async (req, res, next) => {
     throw new Conflict("Email in use");
   }
   const avatarURL = gravatar.url(email);
-  await User.create({ email, password: hashPassword, avatarURL });
+  const verificationToken = uuidv4();
+  await User.create({
+    email,
+    password: hashPassword,
+    avatarURL,
+    verificationToken,
+  });
+
+  await sgMail();
+
   try {
     res.status(201).json({
       status: "sucsess",
@@ -22,6 +33,7 @@ const register = async (req, res, next) => {
         email,
         subscription,
         avatarURL,
+        verificationToken,
       },
     });
   } catch (error) {
