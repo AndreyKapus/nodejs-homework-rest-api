@@ -5,14 +5,16 @@ const { SD_API_KEY } = process.env;
 
 sgMail.setApiKey(SD_API_KEY);
 
-const mail = {
-  to: "kapustnikov@ukr.net",
-  from: "oclock.kiev@gmail.com",
-  subject: "Verification email",
-  html: `<a href="">verify your email</a>`,
+const sendEmail = async (data) => {
+  const email = { ...data, from: "oclock.kiev@gmail.com" };
+
+  try {
+    await sgMail.send(email);
+    return true;
+  } catch (error) {
+    console.log(error);
+    throw error;
+  }
 };
 
-sgMail
-  .send(mail)
-  .then(() => console.log("succsess"))
-  .catch((error) => console.log(error.messege));
+module.exports = sendEmail;

@@ -1,8 +1,9 @@
 const { User } = require("../../models/users");
 const Conflict = require("http-errors");
+const sendEmail = require("../../helpers/sendGrid");
 const bcrypt = require("bcryptjs");
 const gravatar = require("gravatar");
-const sgMail = require("../../helpers/sendGrid");
+// const sgMail = require("../../helpers/sendGrid");
 const { v4: uuidv4 } = require("uuid");
 
 const register = async (req, res, next) => {
@@ -23,7 +24,13 @@ const register = async (req, res, next) => {
     verificationToken,
   });
 
-  await sgMail();
+  const mail = {
+    to: "kapustnikov@ukr.net",
+    subject: "Verification email",
+    html: `<a target="_blank" href="http://localhost:3000/api/users/verify/${verificationToken}">verify your email</a>`,
+  };
+
+  await sendEmail(mail);
 
   try {
     res.status(201).json({
