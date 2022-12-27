@@ -1,6 +1,9 @@
 const { User } = require("../../models/users");
 const Conflict = require("http-errors");
+const sendEmail = require("../../helpers/sendGrid");
 const bcrypt = require("bcryptjs");
+const gravatar = require("gravatar");
+const { v4: uuidv4 } = require("uuid");
 
 const register = async (req, res, next) => {
   const { password, email, subscription = "starter" } = req.body;
@@ -11,8 +14,23 @@ const register = async (req, res, next) => {
   if (user) {
     throw new Conflict("Email in use");
   }
+  const avatarURL = gravatar.url(email);
+  const verificationToken = uuidv4();
+  await User.create({
+    email,
+    password: hashPassword,
+    avatarURL,
+    verificationToken,
+  });
 
-  await User.create({ email, password: hashPassword });
+  const mail = {
+    to: email,
+    subject: "Verification email",
+    html: `<a target="_blank" href="http://localhost:3000/api/users/verify/${verificationToken}">verify your email</a>`,
+  };
+
+  await sendEmail(mail);
+
   try {
     res.status(201).json({
       status: "sucsess",
@@ -20,6 +38,8 @@ const register = async (req, res, next) => {
       data: {
         email,
         subscription,
+        avatarURL,
+        verificationToken,
       },
     });
   } catch (error) {
